@@ -1,311 +1,29 @@
 const express = require('express');
-const mysql = require('mysql');
 const cors = require('cors');
+
 const bodyParser = require('body-parser');
+const dotenv = require('dotenv');
+const studentRoutes = require('./routes/studentRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const feeRoutes = require('./routes/feeRoutes');
+const userRoutes = require('./routes/userRoutes');
+
+const db = require('./config/db'); // Ensure there's no extra punctuation or spaces
+const port = process.env.port;
+
+dotenv.config();
 
 const app = express();
+
 app.use(bodyParser.json()); // To parse JSON requests
 app.use(cors());
 
-// Create MySQL connection
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root', // replace with your MySQL username
-  password: 'musinguziverelian23', // replace with your MySQL password
-  database: 'renew', // replace with your MySQL database name
-});
+// Student routes
+app.use('/api', studentRoutes);
+app.use('/api', paymentRoutes);
+app.use('/api', feeRoutes);
 
-// Connect to MySQL
-db.connect((err) => {
-  if (err) {
-    throw err;
-  }
-  console.log('Connected to the database...');
-});
-
-// Route to POST new student data
-app.post('/students', (req, res) => {
-  const { firstname, lastname, contacts, status, isonloan, program_id } =
-    req.body;
-
-  // Validate input
-  if (!firstname || !lastname || !contacts || !program_id) {
-    return res.status(400).json({
-      error: 'Firstname, Lastname, Contacts, and Program are required',
-    });
-  }
-
-  // Fetch the tuition fee for the selected program
-  const getTuitionFeeSql = 'SELECT tuition_fee FROM programs WHERE id = ?';
-
-  db.query(getTuitionFeeSql, [program_id], (err, programResult) => {
-    if (err) {
-      return res
-        .status(500)
-        .json({ error: 'Database error while fetching tuition fee' });
-    }
-
-    if (programResult.length === 0) {
-      return res.status(404).json({ error: 'Program not found' });
-    }
-
-    const tuition_fee = programResult[0].tuition_fee;
-
-    // Prepare new student data with outstanding balance set to tuition fee
-    const newStudent = {
-      firstname,
-      lastname,
-      contacts,
-      status: status || 'not completed',
-      isonloan: isonloan || false, // Default to false if not provided
-      program_id, // Assign the program_id
-      outstanding_balance: tuition_fee, // Set the outstanding balance to the tuition fee
-    };
-
-    // Insert the new student into the database
-    const insertStudentSql = 'INSERT INTO students SET ?';
-
-    db.query(insertStudentSql, newStudent, (err, result) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ error: 'Database error while inserting student' });
-      }
-
-      res.status(201).json({
-        message: 'Student added successfully',
-        studentId: result.insertId,
-        tuition_fee, // Return tuition fee for frontend use
-      });
-    });
-  });
-});
-
-// Route to UPDATE student status
-app.put('/students/:id/status', (req, res) => {
-  const studentId = req.params.id;
-  const { status } = req.body;
-
-  // Validate the status input
-  if (!['completed', 'travelled', 'not completed'].includes(status)) {
-    return res.status(400).json({ error: 'Invalid status value' });
-  }
-
-  const sql =
-    'UPDATE students SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
-  db.query(sql, [status, studentId], (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Student not found' });
-    }
-    res.status(200).json({ message: 'Student status updated successfully' });
-  });
-});
-
-// Route to GET students who are on loan
-app.get('/students/onloan', (req, res) => {
-  const sql = 'SELECT * FROM students WHERE isonloan = true';
-
-  db.query(sql, (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(200).json(results);
-  });
-});
-
-// Get students who have completed
-app.get('/students/completed', (req, res) => {
-  const sql = `
-    SELECT 
-      s.id,
-      s.firstname,
-      s.lastname,
-      s.contacts,
-      s.status,
-      s.isonloan,
-      p.program_name,
-      p.tuition_fee,
-      IFNULL(SUM(pm.amount_paid), 0) AS total_paid, -- Total amount paid by the student
-      (p.tuition_fee - IFNULL(SUM(pm.amount_paid), 0)) AS balance -- Outstanding balance
-    FROM 
-      students s
-    JOIN 
-      programs p ON s.program_id = p.id
-    LEFT JOIN 
-      payments pm ON s.id = pm.student_id -- LEFT JOIN to include students who have not made payments yet
-    WHERE 
-      s.status = 'completed' -- Filter for not completed students
-    GROUP BY 
-      s.id;
-  `;
-
-  db.query(sql, (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(200).json(results);
-  });
-});
-
-// Get students who have travelled
-app.get('/students/travelled', (req, res) => {
-  const sql = `
-    SELECT 
-      s.id,
-      s.firstname,
-      s.lastname,
-      s.contacts,
-      s.status,
-      s.isonloan,
-      p.program_name,
-      p.tuition_fee,
-      IFNULL(SUM(pm.amount_paid), 0) AS total_paid, -- Total amount paid by the student
-      (p.tuition_fee - IFNULL(SUM(pm.amount_paid), 0)) AS balance -- Outstanding balance
-    FROM 
-      students s
-    JOIN 
-      programs p ON s.program_id = p.id
-    LEFT JOIN 
-      payments pm ON s.id = pm.student_id -- LEFT JOIN to include students who have not made payments yet
-    WHERE 
-      s.status = 'travelled' -- Filter for not completed students
-    GROUP BY 
-      s.id;
-  `;
-
-  db.query(sql, (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(200).json(results);
-  });
-});
-
-// Get students who have travelled
-// Route to GET all students with program, tuition, and balance
-app.get('/students', (req, res) => {
-  const sql = `
-    SELECT 
-      s.id,
-      s.firstname,
-      s.lastname,
-      s.contacts,
-      s.status,
-      s.isonloan,
-      p.program_name,
-      p.tuition_fee,
-      IFNULL(SUM(pm.amount_paid), 0) AS total_paid, -- Total amount paid by the student
-      (p.tuition_fee - IFNULL(SUM(pm.amount_paid), 0)) AS balance -- Outstanding balance
-    FROM 
-      students s
-    JOIN 
-      programs p ON s.program_id = p.id
-    LEFT JOIN 
-      payments pm ON s.id = pm.student_id -- LEFT JOIN to include students who have not made payments yet
-    GROUP BY 
-      s.id;
-  `;
-
-  db.query(sql, (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(200).json(results);
-  });
-});
-
-// Get payments for a specific student by their ID
-// Get payments for a specific student by their ID
-app.get('/payments/:studentId', (req, res) => {
-  const studentId = req.params.studentId; // Get student ID from request parameters
-
-  const sql = `
-    SELECT 
-      pm.id,
-      pm.amount_paid,
-      pm.payment_date,
-      pm.payment_method
-    FROM 
-      payments pm
-    WHERE 
-      pm.student_id = ?; -- Use parameterized query to prevent SQL injection
-  `;
-
-  db.query(sql, [studentId], (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(200).json(results); // Return the list of payments for the specified student
-  });
-});
-
-app.post('/payments', (req, res) => {
-  const { student_id, amount_paid, payment_date, payment_method } = req.body;
-
-  // Validate required fields
-  if (!student_id || !amount_paid || !payment_date || !payment_method) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
-
-  // SQL query to insert the payment record
-  const sql = `
-    INSERT INTO payments (student_id, amount_paid, payment_date, payment_method)
-    VALUES (?, ?, ?, ?);
-  `;
-
-  db.query(
-    sql,
-    [student_id, amount_paid, payment_date, payment_method],
-    (err, result) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-
-      // Return success response
-      res.status(201).json({
-        message: 'Payment added successfully',
-        paymentId: result.insertId,
-      });
-    }
-  );
-});
-
-// Get students who have not completed
-app.get('/students/notcompleted', (req, res) => {
-  const sql = `
-    SELECT 
-      s.id,
-      s.firstname,
-      s.lastname,
-      s.contacts,
-      s.status,
-      s.isonloan,
-      p.program_name,
-      p.tuition_fee,
-      IFNULL(SUM(pm.amount_paid), 0) AS total_paid, -- Total amount paid by the student
-      (p.tuition_fee - IFNULL(SUM(pm.amount_paid), 0)) AS balance -- Outstanding balance
-    FROM 
-      students s
-    JOIN 
-      programs p ON s.program_id = p.id
-    LEFT JOIN 
-      payments pm ON s.id = pm.student_id -- LEFT JOIN to include students who have not made payments yet
-    WHERE 
-      s.status = 'not completed' -- Filter for not completed students
-    GROUP BY 
-      s.id;
-  `;
-
-  db.query(sql, (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(200).json(results);
-  });
-});
+app.use('/api', userRoutes);
 
 // Endpoint to fetch available programs
 app.get('/programs', (req, res) => {
@@ -318,8 +36,154 @@ app.get('/programs', (req, res) => {
   });
 });
 
+app.get('/expenses', (req, res) => {
+  const { start_date, end_date } = req.query;
+
+  let sql = 'SELECT * FROM expenses';
+  const values = [];
+
+  // If both start_date and end_date are provided, filter expenses by date range
+  if (start_date && end_date) {
+    sql += ' WHERE expense_date BETWEEN ? AND ?';
+    values.push(start_date, end_date);
+  }
+
+  db.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('Error fetching expenses:', err);
+      return res.status(500).json({ error: 'Error fetching expenses' });
+    }
+    res.json(results);
+  });
+});
+
+app.post('/courses', (req, res) => {
+  const { program_name, tuition_fee } = req.body;
+  const sql = `INSERT INTO programs (program_name, tuition_fee) VALUES ( ?, ?)`;
+  db.query(sql, [program_name, tuition_fee], (err, result) => {
+    if (err) throw err;
+    res.send('program  added successfully!');
+  });
+});
+
+// POST /expenses - Add a new expense
+app.post('/expenses', (req, res) => {
+  const { person_name, amount, expense_date, description } = req.body;
+
+  // Validation
+  if (
+    !person_name ||
+    typeof person_name !== 'string' ||
+    person_name.length > 100
+  ) {
+    return res.status(400).json({ error: 'Invalid person name' });
+  }
+  if (isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: 'Amount must be a positive number' });
+  }
+  if (!expense_date || isNaN(Date.parse(expense_date))) {
+    return res.status(400).json({ error: 'Invalid expense date' });
+  }
+  if (description && typeof description !== 'string') {
+    return res.status(400).json({ error: 'Description must be a string' });
+  }
+
+  const sql =
+    'INSERT INTO expenses (person_name, amount, expense_date, description) VALUES (?, ?, ?, ?)';
+  const values = [person_name, amount, expense_date, description || ''];
+
+  db.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('Error inserting expense:', err);
+      return res.status(500).json({ error: 'Error adding expense' });
+    }
+    res
+      .status(201)
+      .json({ message: 'Expense added successfully', id: results.insertId });
+  });
+});
+
+// GET payment history for a student
+app.get('/students/:id/paymentz', (req, res) => {
+  const { id } = req.params;
+  const query = `
+        SELECT f.fee_name, p.payment_amount, p.payment_date, p.payment_method 
+        FROM paymentz p 
+        JOIN fees f ON p.fee_id = f.fee_id 
+        WHERE p.student_id = ?`;
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.send(results);
+  });
+});
+
+// GET balance for a student
+app.get('/students/:id/balance', (req, res) => {
+  const { id } = req.params;
+  const query = `
+        SELECT f.fee_name, sfb.total_fee, sfb.amount_paid, sfb.balance_remaining
+        FROM student_fee_balances sfb
+        JOIN fees f ON sfb.fee_id = f.fee_id
+        WHERE sfb.student_id = ?`;
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.send(results);
+  });
+});
+
+// POST: Make a payment for a student
+app.post('/students/:id/paymentz', (req, res) => {
+  const { id } = req.params;
+  const { fee_id, payment_amount, payment_date, payment_method } = req.body; // Include payment_method
+
+  // Insert payment into paymentz table
+  const paymentQuery = `
+        INSERT INTO paymentz (student_id, fee_id, payment_amount, payment_date, payment_method)
+        VALUES (?, ?, ?, ?, ?)`;
+  db.query(
+    paymentQuery,
+    [id, fee_id, payment_amount, payment_date, payment_method],
+    (err) => {
+      if (err) return res.status(500).send(err);
+
+      // Update the balance in student_fee_balances table
+      const updateBalanceQuery = `
+            UPDATE student_fee_balances 
+            SET amount_paid = amount_paid + ?
+            WHERE student_id = ? AND fee_id = ?`;
+      db.query(updateBalanceQuery, [payment_amount, id, fee_id], (err) => {
+        if (err) return res.status(500).send(err);
+        res.send({ message: 'Payment recorded and balance updated' });
+      });
+    }
+  );
+});
+
+app.get('/students/:studentId/payments', (req, res) => {
+  const { studentId } = req.params; // Retrieve the studentId from route parameters
+
+  // SQL query to select only the required fields
+  const sql =
+    'SELECT amount_paid, payment_date, payment_method FROM payments WHERE student_id = ?';
+
+  db.query(sql, [studentId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (results.length === 0) {
+      return res
+        .status(404)
+        .json({ message: 'No payments found for this student' });
+    }
+    res.status(200).json(results); // Return payment records for the specified student
+  });
+});
+// Error Handling for Invalid Routes
+app.use((req, res) => {
+  res.status(404).send({ error: 'Route not found' });
+});
 // Start the server
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });

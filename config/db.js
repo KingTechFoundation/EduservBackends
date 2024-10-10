@@ -2,10 +2,11 @@ const mysql = require('mysql');
 require('dotenv').config();
 
 const db = mysql.createConnection({
-  host: 'localhost',
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.DB_HOST, // Using Railway's database host
+  user: process.env.DB_USER, // MySQL user from .env
+  password: process.env.DB_PASSWORD, // MySQL password from .env
+  database: process.env.DB_NAME, // Database name from .env
+  port: process.env.DB_PORT, // Ensure correct Railway port is used
 });
 
 db.connect((err) => {
@@ -73,7 +74,7 @@ db.connect((err) => {
     // Create 'users' table
     const createUsersTableQuery = `
       CREATE TABLE IF NOT EXISTS users (
-        user_id INT NOT NULL,
+        user_id INT NOT NULL AUTO_INCREMENT,
         role ENUM('registrar','finance','director') NOT NULL,
         hashed_password VARCHAR(255) NOT NULL,
         PRIMARY KEY (user_id)

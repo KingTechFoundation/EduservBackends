@@ -8,8 +8,12 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "/index.js"
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "DATABASE_URL": "mysql://avnadmin:AVNS_vq4SY8Ek-NG1AzxKDRM@mysql-1a5bbb3b-muhirehillary459-c19d.e.aivencloud.com:24683/defaultdb?ssl-mode=REQUIRED"
+  }
 }

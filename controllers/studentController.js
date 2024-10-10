@@ -54,9 +54,6 @@ exports.addStudent = (req, res) => {
   });
 };
 
-
-
-
 // Update student status
 exports.updateStudentStatus = (req, res) => {
   const studentId = req.params.id;
@@ -137,8 +134,7 @@ exports.getTravelledStudents = (req, res) => {
   });
 };
 
-
-exports.getNotCompletedStudents =  (req, res) => {
+exports.getNotCompletedStudents = (req, res) => {
   const sql = `
     SELECT 
       s.id,
@@ -170,9 +166,6 @@ exports.getNotCompletedStudents =  (req, res) => {
     res.status(200).json(results);
   });
 };
-
-
-
 
 // Get all students with program, tuition, and balance
 exports.getAllStudents = (req, res) => {

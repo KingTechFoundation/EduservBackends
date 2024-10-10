@@ -13,7 +13,6 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production",
-    "DATABASE_URL": "mysql://avnadmin:AVNS_vq4SY8Ek-NG1AzxKDRM@mysql-1a5bbb3b-muhirehillary459-c19d.e.aivencloud.com:24683/defaultdb?ssl-mode=REQUIRED"
+    "NODE_ENV": "production"
   }
 }

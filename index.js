@@ -15,7 +15,11 @@ const port = process.env.PORT || 3000; // Ensure port is correctly set
 
 // Middleware
 app.use(bodyParser.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: 'http://localhost:5173',
+  })
+);
 
 // API Routes
 app.use('/api', studentRoutes);

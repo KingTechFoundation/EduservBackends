@@ -16,10 +16,6 @@ const port = process.env.PORT || 3000; // Ensure port is correctly set
 // Middleware
 app.use(bodyParser.json());
 // Allow multiple origins
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://genuine-cuchufli-02e6fe.netlify.app',
-];
 
 const allowedOrigins = [
   'http://localhost:5173', // Development origin

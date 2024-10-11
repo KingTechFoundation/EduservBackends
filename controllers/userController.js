@@ -41,7 +41,7 @@ const hashPasswords = async () => {
 
 // Call hashPasswords to hash and store users (run once)
 // Uncomment the line below to run it when needed
-hashPasswords();
+//hashPasswords();
 
 const loginUser = async (req, res) => {
   const { user_id, password, role } = req.body;

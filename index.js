@@ -135,8 +135,6 @@ app.get('/students/:id/balance', (req, res) => {
   });
 });
 
-
-
 // Get payments for a specific student by their ID
 app.get('/payments/:studentId', (req, res) => {
   const studentId = req.params.studentId; // Get student ID from request parameters
@@ -161,7 +159,6 @@ app.get('/payments/:studentId', (req, res) => {
     res.status(200).json(results); // Return the list of payments for the specified student
   });
 });
-
 
 // POST: Make a payment for a student
 app.post('/students/:id/paymentz', (req, res) => {

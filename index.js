@@ -18,10 +18,10 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // API Routes
-app.use('/api/students', studentRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/fees', feeRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api', studentRoutes);
+app.use('/api', paymentRoutes);
+app.use('/api', feeRoutes);
+app.use('/api', userRoutes);
 
 // Endpoint to fetch available programs
 app.get('/programs', (req, res) => {
@@ -106,7 +106,7 @@ app.post('/expenses', (req, res) => {
 });
 
 // GET payment history for a student
-app.get('/students/:id/payments', (req, res) => {
+app.get('/students/:id/paymentz', (req, res) => {
   const { id } = req.params;
   const query = `
         SELECT f.fee_name, p.payment_amount, p.payment_date, p.payment_method 
@@ -135,8 +135,36 @@ app.get('/students/:id/balance', (req, res) => {
   });
 });
 
+
+
+// Get payments for a specific student by their ID
+app.get('/payments/:studentId', (req, res) => {
+  const studentId = req.params.studentId; // Get student ID from request parameters
+
+  // Use string interpolation in the SQL query
+  const sql = `
+    SELECT 
+      pm.id,
+      pm.amount_paid,
+      pm.payment_date,
+      pm.payment_method
+    FROM 
+      payments pm
+    WHERE 
+      pm.student_id = ${studentId};  -- Interpolated studentId
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.status(200).json(results); // Return the list of payments for the specified student
+  });
+});
+
+
 // POST: Make a payment for a student
-app.post('/students/:id/payments', (req, res) => {
+app.post('/students/:id/paymentz', (req, res) => {
   const { id } = req.params;
   const { fee_id, payment_amount, payment_date, payment_method } = req.body;
 

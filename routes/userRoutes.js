@@ -7,6 +7,6 @@ const { loginUser, hashPasswords } = require('../controllers/userController');
 router.post('/login', loginUser);
 
 // Uncomment the line below if you want to hash and store users (run once)
-// router.post('/hash-passwords', hashPasswords);
+//router.post('/hash-passwords', hashPasswords);
 
 module.exports = router;

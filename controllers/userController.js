@@ -1,4 +1,3 @@
-// controllers/userController.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
@@ -27,19 +26,39 @@ const hashPasswords = async () => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(user.password, salt);
 
-    // Insert into database
-    const sql = `INSERT INTO users (user_id, role, hashed_password) VALUES (?, ?, ?)`;
-    db.query(sql, [user.userId, user.role, hashedPassword], (err, result) => {
+    // Check if user already exists in the database
+    const checkUserSql = `SELECT * FROM users WHERE user_id = ?`;
+    db.query(checkUserSql, [user.userId], (err, results) => {
       if (err) {
-        console.error(`Error inserting user ${user.role}:`, err);
+        console.error(`Error checking user ${user.role}:`, err);
+        return;
+      }
+
+      if (results.length > 0) {
+        console.log(
+          `User ${user.role} with user_id ${user.userId} already exists. Skipping insertion.`
+        );
       } else {
-        console.log(`Hashed password for ${user.role} inserted successfully.`);
+        // Insert new user into the database
+        const insertUserSql = `INSERT INTO users (user_id, role, hashed_password) VALUES (?, ?, ?)`;
+        db.query(
+          insertUserSql,
+          [user.userId, user.role, hashedPassword],
+          (err, result) => {
+            if (err) {
+              console.error(`Error inserting user ${user.role}:`, err);
+            } else {
+              console.log(
+                `Hashed password for ${user.role} inserted successfully.`
+              );
+            }
+          }
+        );
       }
     });
   }
 };
 
-// Call hashPasswords to hash and store users (run once)
 // Uncomment the line below to run it when needed
 //hashPasswords();
 
@@ -52,7 +71,7 @@ const loginUser = async (req, res) => {
       .json({ success: false, message: 'All fields are required' });
   }
 
-  // Query user from database
+  // Query user from the database
   const sql = `SELECT * FROM users WHERE user_id = ? AND role = ?`;
   db.query(sql, [user_id, role], async (err, results) => {
     if (err) {
@@ -84,7 +103,7 @@ const loginUser = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: user.user_id, role: user.role },
-      'musinguziverelian23',
+      'musinguziverelian23', // Replace with your own secret in production
       { expiresIn: '1h' }
     );
 

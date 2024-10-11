@@ -60,7 +60,7 @@ const hashPasswords = async () => {
 };
 
 // Uncomment the line below to run it when needed
-//hashPasswords();
+hashPasswords();
 
 const loginUser = async (req, res) => {
   const { user_id, password, role } = req.body;

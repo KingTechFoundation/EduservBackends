@@ -21,17 +21,28 @@ const allowedOrigins = [
   'https://genuine-cuchufli-02e6fe.netlify.app',
 ];
 
+const allowedOrigins = [
+  'http://localhost:5173', // Development origin
+  'https://edserveeducaationagency.netlify.app', // Production origin (Netlify)
+];
+
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow requests from allowedOrigins or requests without an origin (like Postman)
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // If you're using cookies or authentication
+  credentials: true, // Allow cookies or authorization headers
 };
 
+// Use CORS middleware in your Express app
+app.use(cors(corsOptions));
+
+// Handle preflight requests for all routes
+app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
 // API Routes

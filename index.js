@@ -15,11 +15,24 @@ const port = process.env.PORT || 3000; // Ensure port is correctly set
 
 // Middleware
 app.use(bodyParser.json());
-app.use(
-  cors({
-    origin: 'http://localhost:5173',
-  })
-);
+// Allow multiple origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://genuine-cuchufli-02e6fe.netlify.app',
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // If you're using cookies or authentication
+};
+
+app.use(cors(corsOptions));
 
 // API Routes
 app.use('/api', studentRoutes);

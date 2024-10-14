@@ -13,12 +13,12 @@ const hashPasswords = async () => {
     {
       userId: 25292,
       role: 'finance',
-      password: 'financePassword',
+      password: '2222',
     },
     {
       userId: 25293,
       role: 'director',
-      password: 'directorPassword',
+      password: '5555',
     },
   ];
 

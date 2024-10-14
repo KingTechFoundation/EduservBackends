@@ -17,47 +17,6 @@ db.connect((err) => {
   console.log('Connected to MySQL DB');
 
   try {
-    // Disable foreign key checks
-    db.query('SET FOREIGN_KEY_CHECKS = 0', (err) => {
-      if (err) throw err;
-      console.log('Foreign key checks disabled.');
-
-      // Truncate tables
-      const truncateTables = [
-        'expenses',
-        'programs',
-        'students',
-        'users',
-        'fees',
-        'payments',
-        'paymentz',
-        'student_fee_balances',
-      ];
-
-      truncateTables.forEach((table) => {
-        db.query(`TRUNCATE TABLE ${table}`, (err) => {
-          if (err) throw err;
-          console.log(`Table ${table} truncated.`);
-        });
-      });
-
-      // Enable foreign key checks again
-      db.query('SET FOREIGN_KEY_CHECKS = 1', (err) => {
-        if (err) throw err;
-        console.log('Foreign key checks enabled.');
-
-        // Continue with table creation queries...
-        createTables();
-      });
-    });
-  } catch (error) {
-    console.error('Error during truncation: ', error);
-  }
-});
-
-// Function to create tables
-function createTables() {
-  try {
     // Create 'expenses' table
     const createExpensesTableQuery = `
       CREATE TABLE IF NOT EXISTS expenses (
@@ -70,9 +29,9 @@ function createTables() {
         PRIMARY KEY (id)
       )
     `;
-    db.query(createExpensesTableQuery, (err) => {
+    db.query(createExpensesTableQuery, (err, result) => {
       if (err) throw err;
-      console.log('Expenses table created or already exists.');
+      //console.log('Expenses table created or already exists.');
     });
 
     // Create 'programs' table
@@ -84,9 +43,9 @@ function createTables() {
         PRIMARY KEY (id)
       )
     `;
-    db.query(createProgramsTableQuery, (err) => {
+    db.query(createProgramsTableQuery, (err, result) => {
       if (err) throw err;
-      console.log('Programs table created or already exists.');
+      //console.log('Programs table created or already exists.');
     });
 
     // Create 'students' table
@@ -107,9 +66,9 @@ function createTables() {
         CONSTRAINT fk_program FOREIGN KEY (program_id) REFERENCES programs (id)
       )
     `;
-    db.query(createStudentsTableQuery, (err) => {
+    db.query(createStudentsTableQuery, (err, result) => {
       if (err) throw err;
-      console.log('Students table created or already exists.');
+      //console.log('Students table created or already exists.');
     });
 
     // Create 'users' table
@@ -121,9 +80,9 @@ function createTables() {
         PRIMARY KEY (user_id)
       )
     `;
-    db.query(createUsersTableQuery, (err) => {
+    db.query(createUsersTableQuery, (err, result) => {
       if (err) throw err;
-      console.log('Users table created or already exists.');
+      //console.log('Users table created or already exists.');
     });
 
     // Create 'fees' table
@@ -135,9 +94,9 @@ function createTables() {
         PRIMARY KEY (fee_id)
       )
     `;
-    db.query(createFeesTableQuery, (err) => {
+    db.query(createFeesTableQuery, (err, result) => {
       if (err) throw err;
-      console.log('Fees table created or already exists.');
+      //console.log('Fees table created or already exists.');
     });
 
     // Create 'payments' table
@@ -155,9 +114,9 @@ function createTables() {
         CONSTRAINT payments_ibfk_1 FOREIGN KEY (student_id) REFERENCES students (id)
       )
     `;
-    db.query(createPaymentsTableQuery, (err) => {
+    db.query(createPaymentsTableQuery, (err, result) => {
       if (err) throw err;
-      console.log('Payments table created or already exists.');
+      //console.log('Payments table created or already exists.');
     });
 
     // Create 'paymentz' table
@@ -176,9 +135,9 @@ function createTables() {
         CONSTRAINT paymentz_ibfk_2 FOREIGN KEY (fee_id) REFERENCES fees (fee_id)
       )
     `;
-    db.query(createPaymentzTableQuery, (err) => {
+    db.query(createPaymentzTableQuery, (err, result) => {
       if (err) throw err;
-      console.log('Paymentz table created or already exists.');
+      //console.log('Paymentz table created or already exists.');
     });
 
     // Create 'student_fee_balances' table
@@ -197,13 +156,13 @@ function createTables() {
         CONSTRAINT student_fee_balances_ibfk_2 FOREIGN KEY (fee_id) REFERENCES fees (fee_id)
       )
     `;
-    db.query(createStudentFeeBalancesTableQuery, (err) => {
+    db.query(createStudentFeeBalancesTableQuery, (err, result) => {
       if (err) throw err;
-      console.log('Student Fee Balances table created or already exists.');
+      //console.log('Student Fee Balances table created or already exists.');
     });
   } catch (error) {
     console.error('Error executing table creation queries: ', error);
   }
-}
+});
 
 module.exports = db;
